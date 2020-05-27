@@ -84,30 +84,6 @@ QQC2.StackView {
         replaceWhenLoaded()
     }
 
-    // function loadRedditImage(url, title) {
-    //     console.log("load image at " + url + " title " + title)
-    //     var isFirst = (root.currentItem == undefined)
-    //     var pendingImage = root.baseImage.createObject(root, {
-    //         "source": url,
-    //         "fillMode": root.fillMode,
-    //         "sourceSize": root.sourceSize,
-    //         "color": root.configColor,
-    //         "blur": root.blur,
-    //         "opacity": isFirst ? 1 : 0,
-    //         "imgTitle": title
-    //     })
-
-    //     function replaceWhenLoaded() {
-    //         if (pendingImage.status != Image.Loading) {
-    //             root.replace(pendingImage, {},
-    //                 isFirst ? QQC2.StackView.Immediate : QQC2.StackView.Transition) // don't animate first show
-    //             pendingImage.statusChanged.disconnect(replaceWhenLoaded)
-    //         }
-    //     }
-    //     pendingImage.statusChanged.connect(replaceWhenLoaded)
-    //     replaceWhenLoaded()
-    // }
-
     function getReddit(url, callback) {
        var xhr = new XMLHttpRequest();
        
@@ -126,12 +102,10 @@ QQC2.StackView {
           if  (d["error"] == "404" || d["data"]["children"] == ""){
               console.log("404 or empty")
               setError("404 or empty")
-            //   loadRedditImage("blackscreen.jpg", "404 or empty")
             loadImage()
           }else if (d["error"] == "403"){
               console.log("private subreddit")
               setError("connection failed, private subreddit")
-            //   loadRedditImage("blackscreen.jpg", "connection failed, private subreddit")
             loadImage()
           }else{
             var N=Math.floor(Math.random()*d.data.children.length)
@@ -146,19 +120,16 @@ QQC2.StackView {
                 }
                 root.currentUrl = url
                 root.currentMessage = d["data"]["children"][N]["data"].title
-                // loadRedditImage(url, d["data"]["children"][N]["data"].title)
                 loadImage()
             }else{
                 console.log("no image")
                 setError("no image could be fetched")
-                // loadRedditImage("blackscreen.jpg", "no image could be fetched")
                 loadImage()
             }
           }
         }else{
             console.log("connection failed")
             setError("connection failed")
-            // loadRedditImage("blackscreen.jpg", "connection failed")
             loadImage()
         }
     }
