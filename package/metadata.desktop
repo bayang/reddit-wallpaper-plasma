@@ -1,0 +1,19 @@
+[Desktop Entry]
+Encoding=UTF-8
+Keywords=
+Icon=preferences-desktop-wallpaper
+Name=Reddit wallpaper
+
+Type=Service
+
+X-KDE-ServiceTypes=Plasma/Wallpaper
+X-KDE-ParentApp=
+X-KDE-PluginInfo-Author=bayang
+X-KDE-PluginInfo-Email=bayangapps@gmail.com
+X-KDE-PluginInfo-Name=io.github.bayang.redditwallpaper
+X-KDE-PluginInfo-Version=1
+X-KDE-PluginInfo-Website=https://github.com/
+X-Plasma-MainScript=ui/main.qml
+
+MimeType=image/jpeg;image/png;image/svg+xml;image/svg+xml-compressed;image/bmp;
+X-Plasma-DropMimeTypes=image/jpeg,image/png,image/svg+xml,image/svg+xml-compressed,image/bmp
