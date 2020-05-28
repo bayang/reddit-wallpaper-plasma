@@ -19,9 +19,9 @@
 
 import QtQuick 2.5
 import QtQuick.Controls 1.0 as QtControls
-import QtQuick.Controls 2.3 as QtControls2
+import QtQuick.Controls 2.1 as QtControls2
 import QtQuick.Layouts 1.0
-import QtQuick.Window 2.0 // for Screen
+import QtQuick.Window 2.2 // for Screen
 //We need units from it
 import org.kde.plasma.core 2.0 as Plasmacore
 import org.kde.plasma.wallpapers.image 2.0 as Wallpaper
@@ -30,7 +30,7 @@ import org.kde.kquickcontrolsaddons 2.0
 import org.kde.kconfig 1.0 // for KAuthorized
 import org.kde.draganddrop 2.0 as DragDrop
 import org.kde.kcm 1.1 as KCM
-import org.kde.kirigami 2.5 as Kirigami
+import org.kde.kirigami 2.0 as Kirigami
 
 ImageConfigPage {
     id: root
