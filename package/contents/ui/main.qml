@@ -34,6 +34,7 @@ QQC2.StackView {
     readonly property size sourceSize: Qt.size(root.width * Screen.devicePixelRatio, root.height * Screen.devicePixelRatio)
     readonly property string subreddit: wallpaper.configuration.Subreddit
     readonly property int wallpaperDelay: wallpaper.configuration.WallpaperDelay
+    property int errorTimerDelay: 20000
     property string currentUrl: "blackscreen.jpg"
     property string currentMessage: ""
 
@@ -42,6 +43,16 @@ QQC2.StackView {
         interval: wallpaperDelay * 60 * 1000
         repeat: true
         triggeredOnStart: true
+        onTriggered: {
+            getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
+        }
+    }
+
+    Timer {
+        id : retryOnErrorTimer
+        interval: errorTimerDelay
+        repeat: false
+        triggeredOnStart: false
         onTriggered: {
             getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
         }
@@ -137,6 +148,8 @@ QQC2.StackView {
     function setError(msg) {
         root.currentUrl = "blackscreen.jpg"
         root.currentMessage = msg
+        errorTimerDelay *= 1.5
+        retryOnErrorTimer.start()
     }
 
     property Component baseImage: Component {
