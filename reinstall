@@ -3,4 +3,7 @@
 
 kpackagetool5 -t Plasma/Wallpaper -u package
 killall plasmashell
+
+# for easy debugging:
+# kstart5 plasmashell 2>&1 >/dev/null | grep reddit
 kstart5 plasmashell

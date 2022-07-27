@@ -28,52 +28,87 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 QQC2.StackView {
     id: root
 
+    readonly property bool refetchSignal: wallpaper.configuration.RefetchSignal
     readonly property int fillMode: wallpaper.configuration.FillMode
     readonly property string configColor: wallpaper.configuration.Color
     readonly property bool blur: wallpaper.configuration.Blur
     readonly property size sourceSize: Qt.size(root.width * Screen.devicePixelRatio, root.height * Screen.devicePixelRatio)
     readonly property string subreddit: wallpaper.configuration.Subreddit
+    readonly property string subredditSection: wallpaper.configuration.SubredditSection
+    readonly property string subredditSectionTime: wallpaper.configuration.SubredditSectionTime
+    readonly property string preferOrientation: wallpaper.configuration.PreferOrientation
+    readonly property bool showPostTitle: wallpaper.configuration.ShowPostTitle
+    readonly property bool allowNSFW: wallpaper.configuration.AllowNSFW
     readonly property int wallpaperDelay: wallpaper.configuration.WallpaperDelay
     property int errorTimerDelay: 20000
     property string currentUrl: "blackscreen.jpg"
     property string currentMessage: ""
+    property string lastSubreddit: ""
+    property bool hasError: false
 
     Timer {
-        id : myTimer
+        id: myTimer
         interval: wallpaperDelay * 60 * 1000
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
+            getRedditPosts();
         }
     }
 
     Timer {
-        id : retryOnErrorTimer
+        id: retryOnErrorTimer
         interval: errorTimerDelay
         repeat: false
         triggeredOnStart: false
         onTriggered: {
-            getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
+            getRedditPosts();
         }
     }
 
+    onRefetchSignalChanged: {
+        log("got refetch signal in main");
+        myTimer.restart();
+    }
     onFillModeChanged: Qt.callLater(loadImage)
     onConfigColorChanged: Qt.callLater(loadImage)
     onBlurChanged: Qt.callLater(loadImage)
     onWidthChanged: Qt.callLater(loadImage)
     onHeightChanged: Qt.callLater(loadImage)
-    onSubredditChanged : {
-        console.log("subreddit changed in main " + subreddit)
-        myTimer.restart()
+    onSubredditChanged: {
+        log("subreddit changed in main " + subreddit);
+        myTimer.restart();
+    }
+    onSubredditSectionChanged: {
+        log("subreddit section changed in main " + subredditSection);
+        myTimer.restart();
+    }
+    onSubredditSectionTimeChanged: {
+        log("subreddit section time changed in main " + subredditSectionTime);
+        myTimer.restart();
+    }
+    onPreferOrientationChanged: {
+        log("prefer orientation changed in main " + preferOrientation);
+        myTimer.restart();
+    }
+    onShowPostTitleChanged: {
+        log("show post title changed in main " + showPostTitle);
+    }
+    onAllowNSFWChanged: {
+        log("allow NSFW changed in main " + allowNSFW);
+        myTimer.restart();
     }
     onWallpaperDelayChanged: {
-        console.log("delay changed in main " + wallpaperDelay)
-        myTimer.restart()
+        log("delay changed in main " + wallpaperDelay);
+        myTimer.restart();
+    }
+
+    function log(...args) {
+        console.log("reddit wallpaper:", ...args);
     }
 
     function loadImage() {
-        var isFirst = (root.currentItem == undefined)
+        var isFirst = (root.currentItem == undefined);
         var pendingImage = root.baseImage.createObject(root, {
             "source": root.currentUrl,
             "fillMode": root.fillMode,
@@ -81,79 +116,153 @@ QQC2.StackView {
             "color": root.configColor,
             "blur": root.blur,
             "opacity": isFirst ? 1 : 0,
-            "imgTitle": root.currentMessage
+            "imgTitle": root.currentMessage,
+            "playing": true,
+            "cache": true,
         })
 
         function replaceWhenLoaded() {
-            if (pendingImage.status != Image.Loading) {
+            if (pendingImage.status !== Image.Loading) {
                 root.replace(pendingImage, {},
-                    isFirst ? QQC2.StackView.Immediate : QQC2.StackView.Transition) // don't animate first show
-                pendingImage.statusChanged.disconnect(replaceWhenLoaded)
+                    isFirst ? QQC2.StackView.Immediate : QQC2.StackView.Transition); // don't animate first show
+                pendingImage.statusChanged.disconnect(replaceWhenLoaded);
             }
         }
-        pendingImage.statusChanged.connect(replaceWhenLoaded)
-        replaceWhenLoaded()
+        pendingImage.statusChanged.connect(replaceWhenLoaded);
+        replaceWhenLoaded();
     }
 
-    function getReddit(url, callback) {
-       var xhr = new XMLHttpRequest();
-       
-       xhr.onreadystatechange = (function f() {
-            if (xhr.readyState == 4) { callback(xhr);}
-       });
-       xhr.open('GET', url, true);
-       xhr.setRequestHeader('User-Agent','reddit-wallpaper-kde-plugin');
-       XMLHttpRequest.timeout = 15000
-       xhr.send();
-   }
+    function getRedditPosts() {
+        const allSubreddits = (subreddit || '').toLowerCase().trim().split(/[ ,]+/).map(sub => sub.replace(/^r\//, ''));
+        let candidateSubs = allSubreddits.filter(sub => sub !== lastSubreddit);
+        if (candidateSubs.length === 0) {
+            candidateSubs = allSubreddits;
+        }
+        const sub = candidateSubs[Math.floor(Math.random() * candidateSubs.length)] || '';
+        lastSubreddit = sub;
+        fetchRedditData(sub).then(pickImage).catch(e => {
+            log(e);
+            setError(e);
+            loadImage();
+        });
+    }
 
-    function callback(x){
-        if (x.responseText) {
-          var d = JSON.parse(x.responseText);
-          if  (d["error"] == "404" || d["data"]["children"] == ""){
-              console.log("404 or empty")
-              setError("404 or empty")
-            loadImage()
-          }else if (d["error"] == "403"){
-              console.log("private subreddit")
-              setError("connection failed, private subreddit")
-            loadImage()
-          }else{
-            var N=Math.floor(Math.random()*d.data.children.length)
-            if (d["data"]["children"][N]["data"]["preview"]){
-                var url = d["data"]["children"][N]["data"].url
-                if (url.indexOf("imgur.com") != -1 
-                    && url.indexOf("i.imgur.com") == -1) {
-                    console.log("imgur " + url)
-                    url = url.replace('imgur.com', 'i.imgur.com')
-                    url = url.concat('.jpg')
-                    console.log("imgur " + url)
+    function fetchRedditData(sub) {
+        log("fetching new wallpaper! Using sub: " + sub);
+        return new Promise((res, rej) => {
+            const url = `https://www.reddit.com/r/${sub}/${subredditSection}.json?sort=top&t=${subredditSectionTime}&limit=100`;
+            log('using url: ' + url);
+            const xhr = new XMLHttpRequest();
+            xhr.onload = () => {
+                if (!xhr.responseText) {;
+                    return rej("connection failed");
                 }
-                root.currentUrl = url
-                root.currentMessage = d["data"]["children"][N]["data"].title
-                loadImage()
-            }else{
-                console.log("no image")
-                setError("no image could be fetched")
-                loadImage()
+                let data = {};
+                try {
+                    data = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    return rej("couldnt parse json");
+                }
+                res(data);
+            };
+            xhr.open('GET', url);
+            xhr.setRequestHeader('User-Agent','reddit-wallpaper-kde-plugin');
+            xhr.timeout = 15000;
+            xhr.send();
+        });
+    }
+
+    function get(obj, path, def) {
+        const pathParts = path.split('.');
+        let current = obj;
+        for (let x = 0; x < pathParts.length && current; x++) {
+            current = current[pathParts[x]];
+        }
+        return current !== undefined ? current : def;
+    }
+
+    function filterImages(imageObjs) {
+        const domainMapFunctions = {
+            'https://i.redd.it': a => a,
+            'https://i.imgur.com': a => a,
+            'https://imgur.com': url => url.replace('https://imgur.com/', 'https://i.imgur.com/') + '.jpg'
+        };
+        const allowedDomains = Object.keys(domainMapFunctions);
+        const preFilteredImages = imageObjs.filter(c => {
+            const data = c.data || {};
+            const url = (data.url || '').replace('http:', 'https:');
+            const allowed = allowedDomains.some(d => {
+                if (url.startsWith(d)) {
+                    data.url = domainMapFunctions[d](url);
+                    return true;
+                }
+                return false;
+            });
+            return allowed && (allowNSFW || !data.over_18);
+        });
+        let filteredImages = preFilteredImages;
+        if (preferOrientation === 'landscape') {
+            filteredImages = filteredImages.filter(c => {
+                const imageInfo = get(c, 'data.preview.images.0.source');
+                return imageInfo && imageInfo.width >= imageInfo.height;
+            });
+        } else if (preferOrientation === 'portrait') {
+            filteredImages = filteredImages.filter(c => {
+                const imageInfo = get(c, 'data.preview.images.0.source');
+                return imageInfo && imageInfo.width <= imageInfo.height;
+            });
+        }
+        if (filteredImages.length === 0) {
+            filteredImages = preFilteredImages;
+        }
+        return filteredImages;
+    }
+
+    function pickImage(d) {
+        const allImages = d.data && d.data.children || [];
+        if (allImages.length === 0) {
+            log("Failed to fetch. Status: " + d.error);
+            setError("404, 403 or empty");
+            loadImage();
+            return;
+        }
+        let filteredImages = filterImages(allImages);
+        if (filteredImages.length === 0) {
+            setError("No images found. Bad subreddit? Only NSFW?");
+            loadImage();
+            return;
+        }
+
+        const imageObj = filteredImages[Math.floor(Math.random() * filteredImages.length)] || {};
+        if (imageObj.data && imageObj.data.preview) {
+            let url = imageObj.data.url;
+            if (url.indexOf("imgur.com") !== -1 && url.indexOf("i.imgur.com") === -1) {
+                url = url.replace('imgur.com', 'i.imgur.com') + '.jpg';
             }
-          }
-        }else{
-            console.log("connection failed")
-            setError("connection failed")
-            loadImage()
+            log("using image: " + url);
+            root.currentUrl = url;
+            root.currentMessage = imageObj.data.title;
+            root.hasError = false;
+            errorTimerDelay = 20000;
+            retryOnErrorTimer.stop();
+            loadImage();
+        } else {
+            log("no image");
+            setError("No images found. Bad subreddit? Only NSFW?");
+            loadImage();
         }
     }
 
     function setError(msg) {
-        root.currentUrl = "blackscreen.jpg"
-        root.currentMessage = msg
-        errorTimerDelay *= 1.5
-        retryOnErrorTimer.start()
+        root.currentUrl = "blackscreen.jpg";
+        root.currentMessage = msg;
+        root.hasError = true;
+        errorTimerDelay *= 1.5;
+        retryOnErrorTimer.start();
     }
 
     property Component baseImage: Component {
-        Image {
+        AnimatedImage {
             id: mainImage
 
             property alias color: backgroundColor.color
@@ -202,17 +311,22 @@ QQC2.StackView {
                     }
                 }
             }
-    QQC2.Label {
-        id: imageTitle
-        color: "white"
-        font.pixelSize: 12
-        text : imgTitle
-        // hardcoded positioning sucks
-        // we need a way to know how much space user toolbars take
-        // to avoid positioning the label behind
-        y : (root.height * Screen.devicePixelRatio) - 50
-        x: 30
-    }
+            QQC2.Label {
+                id: imageTitle
+                color: "white"
+                width: root.width * Screen.devicePixelRatio - 100
+                horizontalAlignment: Text.AlignRight
+                style: Text.Outline
+                styleColor: "#000000"
+                font.pixelSize: 12
+                text: imgTitle
+                visible: showPostTitle || root.hasError
+                // hardcoded positioning sucks
+                // we need a way to know how much space user toolbars take
+                // to avoid positioning the label behind
+                y: (root.height * Screen.devicePixelRatio) - 100
+                x: 0
+            }
         }
     }
 
