@@ -44,7 +44,7 @@ QQC2.StackView {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
+            getReddit("https://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
         }
     }
 
@@ -54,7 +54,7 @@ QQC2.StackView {
         repeat: false
         triggeredOnStart: false
         onTriggered: {
-            getReddit("http://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
+            getReddit("https://www.reddit.com/r/"+subreddit+"/new.json?limit=100",callback)
         }
     }
 
