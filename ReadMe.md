@@ -1,5 +1,7 @@
 Plasma Reddit Wallpaper plugin 
 
+Greatly inspired by https://github.com/Zren/plasma-wallpapers
+
 In config : 
 
 * choose a subreddit (pick one with many pictures like EarthPorn for example otherwise no pic can be fetched)
