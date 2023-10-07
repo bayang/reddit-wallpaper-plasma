@@ -41,11 +41,7 @@ ColumnLayout {
     property alias cfg_Blur: blurRadioButton.checked
 
     function saveConfig() {
-        imageWallpaper.commitDeletion();
-    }
-
-    SystemPalette {
-        id: syspal
+        imageWallpaper.wallpaperModel.commitDeletion();
     }
 
     Wallpaper.ImageBackend {

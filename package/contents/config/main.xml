@@ -26,6 +26,10 @@
       <label>Subreddit from which to fetch wallpaper</label>
       <default>"EarthPorn"</default>
     </entry>
+    <entry name="Altreddit" type="String">
+      <label>Alt. reddit domain from which to fetch wallpaper. Put all the path omitting only the filemane</label>
+      <default>https://libreddit.domain.glass/img/</default>
+    </entry>
     <entry name="WallpaperDelay" type="int">
       <label>How much time in minutes between wallpaper change.</label>
       <default>1440</default>

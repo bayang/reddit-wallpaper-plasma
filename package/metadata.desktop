@@ -11,7 +11,7 @@ X-KDE-ParentApp=
 X-KDE-PluginInfo-Author=bayang
 X-KDE-PluginInfo-Email=bayangapps@gmail.com
 X-KDE-PluginInfo-Name=io.github.bayang.redditwallpaper
-X-KDE-PluginInfo-Version=6
+X-KDE-PluginInfo-Version=7
 X-KDE-PluginInfo-Website=https://github.com/bayang/reddit-wallpaper-plasma
 X-Plasma-MainScript=ui/main.qml
 

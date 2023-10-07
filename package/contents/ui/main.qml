@@ -33,6 +33,7 @@ QQC2.StackView {
     readonly property bool blur: wallpaper.configuration.Blur
     readonly property size sourceSize: Qt.size(root.width * Screen.devicePixelRatio, root.height * Screen.devicePixelRatio)
     readonly property string subreddit: wallpaper.configuration.Subreddit
+    readonly property string altDomain: wallpaper.configuration.Altreddit
     readonly property int wallpaperDelay: wallpaper.configuration.WallpaperDelay
     property int errorTimerDelay: 20000
     property string currentUrl: "blackscreen.jpg"
@@ -85,6 +86,9 @@ QQC2.StackView {
         })
 
         function replaceWhenLoaded() {
+            if (pendingImage.status == Image.Error) {
+                console.log("img err")
+            }
             if (pendingImage.status != Image.Loading) {
                 root.replace(pendingImage, {},
                     isFirst ? QQC2.StackView.Immediate : QQC2.StackView.Transition) // don't animate first show
@@ -102,7 +106,7 @@ QQC2.StackView {
             if (xhr.readyState == 4) { callback(xhr);}
        });
        xhr.open('GET', url, true);
-       xhr.setRequestHeader('User-Agent','reddit-wallpaper-kde-plugin');
+    //    xhr.setRequestHeader('User-Agent','reddit-wallpaper-kde-plugin');
        XMLHttpRequest.timeout = 15000
        xhr.send();
    }
@@ -129,6 +133,8 @@ QQC2.StackView {
                     url = url.concat('.jpg')
                     console.log("imgur " + url)
                 }
+                url = url.replace('https://i.redd.it/', altDomain)
+                console.log("currurl " + url + "\n")
                 root.currentUrl = url
                 root.currentMessage = d["data"]["children"][N]["data"].title
                 loadImage()
