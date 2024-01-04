@@ -37,6 +37,7 @@ ImageConfigPage {
 
     property int cfg_WallpaperDelay: 1440
     property string cfg_Subreddit: "EarthPorn"
+    property string cfg_Altreddit: "https://libreddit.domain.glass/img/"
 
     Column {
         id: pluginSpecificColumn
