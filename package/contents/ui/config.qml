@@ -37,7 +37,6 @@ ImageConfigPage {
 
     property int cfg_WallpaperDelay: 1440
     property string cfg_Subreddit: "EarthPorn"
-    property string cfg_Altreddit: "https://libreddit.domain.glass/img/"
 
     Column {
         id: pluginSpecificColumn
@@ -53,16 +52,7 @@ ImageConfigPage {
                 cfg_Subreddit = text
             }
         }
-        QtControls2.Label {
-            text: i18n("Alt. reddit domain : ")
-        }
-        QtControls2.TextField {
-            id: altredditInput
-            text: cfg_Altreddit
-            onTextChanged: {
-                cfg_Altreddit = text
-            }
-        }
+        
         QtControls2.Label {
             text: i18n("Delay between changes (in minutes) : ")
         }

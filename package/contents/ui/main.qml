@@ -27,13 +27,11 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 
 QQC2.StackView {
     id: root
-
     readonly property int fillMode: wallpaper.configuration.FillMode
     readonly property string configColor: wallpaper.configuration.Color
     readonly property bool blur: wallpaper.configuration.Blur
     readonly property size sourceSize: Qt.size(root.width * Screen.devicePixelRatio, root.height * Screen.devicePixelRatio)
     readonly property string subreddit: wallpaper.configuration.Subreddit
-    readonly property string altDomain: wallpaper.configuration.Altreddit
     readonly property int wallpaperDelay: wallpaper.configuration.WallpaperDelay
     property int errorTimerDelay: 20000
     property string currentUrl: "blackscreen.jpg"
@@ -99,14 +97,62 @@ QQC2.StackView {
         replaceWhenLoaded()
     }
 
+    function imgType(url) {
+        if (url.endsWith('.png') || url.endsWith('.PNG')) {
+            return 'png'
+        } else {
+            return 'jpeg'
+        }
+    }
+
+    function imgToB64(url) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = (function f() {
+            if (xhr.readyState == 4) { 
+                var response = new Uint8Array(xhr.response);
+                var raw = "";
+                for (var i = 0; i < response.byteLength; i++) {
+                    raw += String.fromCharCode(response[i]);
+                }
+                // Qt.btoa is broken https://stackoverflow.com/questions/53888158/download-and-convert-image-to-data-uri-in-qml
+                //FROM https://cdnjs.cloudflare.com/ajax/libs/Base64/1.0.1/base64.js
+                function base64Encode (input) {
+                    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+                    var str = String(input);
+                    for (
+                        // initialize result and counter
+                        var block, charCode, idx = 0, map = chars, output = '';
+                        str.charAt(idx | 0) || (map = '=', idx % 1);
+                        output += map.charAt(63 & block >> 8 - idx % 1 * 8)
+                        ) {
+                        charCode = str.charCodeAt(idx += 3/4);
+                        if (charCode > 0xFF) {
+                            throw new Error("Base64 encoding failed: The string to be encoded contains characters outside of the Latin1 range.");
+                        }
+                        block = block << 8 | charCode;
+                    }
+                    return output;
+                }
+                var image = 'data:image/' + imgType(url) +';base64,' + base64Encode(raw);
+                root.currentUrl = image
+                 loadImage()
+            }
+       });
+       xhr.open('GET', url, true);
+       xhr.setRequestHeader('User-Agent','reddit-wallpaper-plugin');
+       xhr.setRequestHeader('accept', 'image/avif,image/webp,*/*');
+       xhr.responseType = 'arraybuffer';
+       XMLHttpRequest.timeout = 15000
+       xhr.send();
+    }
+
     function getReddit(url, callback) {
        var xhr = new XMLHttpRequest();
-       
        xhr.onreadystatechange = (function f() {
             if (xhr.readyState == 4) { callback(xhr);}
        });
        xhr.open('GET', url, true);
-    //    xhr.setRequestHeader('User-Agent','reddit-wallpaper-kde-plugin');
+       xhr.setRequestHeader('User-Agent','reddit-wallpaper-plugin');
        XMLHttpRequest.timeout = 15000
        xhr.send();
    }
@@ -128,16 +174,11 @@ QQC2.StackView {
                 var url = d["data"]["children"][N]["data"].url
                 if (url.indexOf("imgur.com") != -1 
                     && url.indexOf("i.imgur.com") == -1) {
-                    console.log("imgur " + url)
                     url = url.replace('imgur.com', 'i.imgur.com')
                     url = url.concat('.jpg')
-                    console.log("imgur " + url)
                 }
-                url = url.replace('https://i.redd.it/', altDomain)
-                console.log("currurl " + url + "\n")
-                root.currentUrl = url
                 root.currentMessage = d["data"]["children"][N]["data"].title
-                loadImage()
+                imgToB64(url)
             }else{
                 console.log("no image")
                 setError("no image could be fetched")
