@@ -1,0 +1,43 @@
+{
+	"KPackageStructure": "Plasma/Wallpaper",
+	"KPlugin": {
+		"Authors": [
+			{
+				"Email": "stls@ik.me",
+				"Name": "bayang"
+			}
+		],
+		"Category": "",
+		"Description": "Wallpaper pictures from reddit",
+		"Icon": "preferences-desktop-wallpaper",
+		"Id": "io.github.bayang.redditwallpaper",
+		"License": "GPLv2+",
+		"MimeTypes": [
+			"image/jpeg",
+			"image/png",
+			"image/svg+xml",
+			"image/svg+xml-compressed",
+			"image/bmp",
+			"image/webp",
+			"image/tiff"
+		],
+		"Name": "Reddit wallpaper",
+		"Website": "https://github.com/bayang/reddit-wallpaper-plasma"
+	},
+	"Keywords": "wallpaper",
+	"MimeType": "image/avif;image/gif;image/heif;image/jpeg;image/png;image/svg+xml;image/svg+xml-compressed;image/bmp;image/webp;image/tiff;",
+	"X-KDE-ParentApp": "org.kde.plasmashell",
+	"X-Plasma-API-Minimum-Version": "6.0",
+	"X-Plasma-DropMimeTypes": [
+		"image/avif",
+		"image/gif",
+		"image/heif",
+		"image/jpeg",
+		"image/png",
+		"image/svg+xml",
+		"image/svg+xml-compressed",
+		"image/bmp",
+		"image/webp",
+		"image/tiff"
+	]
+}

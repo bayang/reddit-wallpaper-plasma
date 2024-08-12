@@ -19,14 +19,12 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-import QtQuick 2.0
-import QtQuick.Controls.Private 1.0
-import QtQuick.Controls 2.3 as QtControls2
-import QtGraphicalEffects 1.0
-import org.kde.kquickcontrolsaddons 2.0
-import org.kde.plasma.components 2.0 as PlasmaComponents
-import org.kde.kirigami 2.4 as Kirigami
-import org.kde.kcm 1.1 as KCM
+import QtQuick
+import QtQuick.Controls as QtControls2
+import Qt5Compat.GraphicalEffects
+import org.kde.kquickcontrolsaddons
+import org.kde.kirigami as Kirigami
+import org.kde.kcmutils as KCM
 
 KCM.GridDelegate {
     id: wallpaperDelegate
@@ -73,7 +71,7 @@ KCM.GridDelegate {
 
         QIconItem {
             anchors.centerIn: parent
-            width: units.iconSizes.large
+            width: Kirigami.Units.iconSizes.large
             height: width
             icon: "view-preview"
             visible: !walliePreview.visible
@@ -102,36 +100,38 @@ KCM.GridDelegate {
             smooth: true
             pixmap: model.screenshot
             fillMode: {
-                if (cfg_FillMode == Image.Stretch) {
+                if (cfg_FillMode === Image.Stretch) {
                     return QPixmapItem.Stretch;
-                } else if (cfg_FillMode == Image.PreserveAspectFit) {
+                } else if (cfg_FillMode === Image.PreserveAspectFit) {
                     return QPixmapItem.PreserveAspectFit;
-                } else if (cfg_FillMode == Image.PreserveAspectCrop) {
+                } else if (cfg_FillMode === Image.PreserveAspectCrop) {
                     return QPixmapItem.PreserveAspectCrop;
-                } else if (cfg_FillMode == Image.Tile) {
+                } else if (cfg_FillMode === Image.Tile) {
                     return QPixmapItem.Tile;
-                } else if (cfg_FillMode == Image.TileVertically) {
+                } else if (cfg_FillMode === Image.TileVertically) {
                     return QPixmapItem.TileVertically;
-                } else if (cfg_FillMode == Image.TileHorizontally) {
+                } else if (cfg_FillMode === Image.TileHorizontally) {
                     return QPixmapItem.TileHorizontally;
                 }
                 return QPixmapItem.PreserveAspectFit;
+            },
+            layer.enabled: cfg_ActiveBlur
+            layer.effect: FastBlur {
+                anchors.fill: parent
+                radius: wallpaperDelegate.hovered ? cfg_BlurRadius : 0
+                source: Image {
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectCrop
+                    source: walliePreview
+                }
+                // animate the blur apparition
+                Behavior on radius {
+                    NumberAnimation {
+                        duration: cfg_AnimationDuration
+                    }
+                }
             }
         }
-
-        // --- inactiveblur ---
-        FastBlur {
-            id: wallieBlurPreview
-            anchors.fill: parent
-            source: walliePreview
-            visible: radius > 0
-            radius: wallpaperDelegate.hovered ? cfg_BlurRadius : 0
-
-            Behavior on radius {
-                NumberAnimation { duration: cfg_AnimationDuration }
-            }
-        }
-        // -------------------
 
         QtControls2.CheckBox {
             visible: cfg_Slideshow

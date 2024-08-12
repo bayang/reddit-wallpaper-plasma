@@ -1,10 +1,11 @@
-import QtQuick 2.1
-import QtQuick.Controls 1.0
-import QtQuick.Layouts 1.3
-import QtQuick.Window 2.1
-import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.kitemmodels as KItemModels
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Window
+import org.kde.plasma.core as PlasmaCore
 
-import org.kde.taskmanager 0.1 as TaskManager
+import org.kde.taskmanager as TaskManager
 
 Item {
 	property alias screenGeometry: tasksModel.screenGeometry
@@ -40,7 +41,7 @@ Item {
 			activeWindowModel.sourceModel = tasksModel
 		}
 	}
-	PlasmaCore.SortFilterModel {
+	KItemModels.KSortFilterProxyModel {
 		id: activeWindowModel
 		filterRole: 'IsActive'
 		filterRegExp: 'true'
@@ -53,7 +54,6 @@ Item {
 			updateActiveWindowInfo()
 		}
 	}
-
 
 	function activeTask() {
 		return activeWindowModel.get(0) || {}
