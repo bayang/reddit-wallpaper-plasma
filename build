@@ -2,11 +2,15 @@
 # Version 5
 
 packageExt="zip"
-packageName=$(kreadconfig5 --file="$PWD/package/metadata.desktop" --group="Desktop Entry" --key="X-KDE-PluginInfo-Name")
-packageName="${packageName##*.}" # Strip namespace (Eg: "org.kde.plasma.")
-packageVersion=$(kreadconfig5 --file="$PWD/package/metadata.desktop" --group="Desktop Entry" --key="X-KDE-PluginInfo-Version")
+packageName="redditwallpaper"
+packageVersion="$1"
+if [ -z "$1" ]
+then
+  echo "missing version argument"
+  exit 1
+fi
 rm ${packageName}-v*.${packageExt}
-cd package
+cd package || exit 1
 filename=${packageName}-v${packageVersion}.${packageExt}
 zip -r $filename *
 mv $filename ../$filename

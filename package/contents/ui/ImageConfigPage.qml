@@ -19,26 +19,23 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-import QtQuick 2.5
-import QtQuick.Controls 1.0 as QtControls
-import QtQuick.Controls 2.3 as QtControls2
-import QtQuick.Layouts 1.0
-import QtQuick.Window 2.0 // for Screen
-//We need units from it
-import org.kde.plasma.core 2.0 as Plasmacore
-import org.kde.plasma.wallpapers.image 2.0 as Wallpaper
-import org.kde.kquickcontrols 2.0 as KQuickControls
-import org.kde.kquickcontrolsaddons 2.0
-import org.kde.kconfig 1.0 // for KAuthorized
-import org.kde.draganddrop 2.0 as DragDrop
-import org.kde.kcm 1.1 as KCM
-import org.kde.kirigami 2.5 as Kirigami
+import QtQuick
+import QtQuick.Controls as QtControls2
+import QtQuick.Layouts
+import QtQuick.Window // for Screen
+import org.kde.plasma.wallpapers.image as Wallpaper
+import org.kde.kquickcontrols as KQuickControls
+import org.kde.kquickcontrolsaddons
+import org.kde.kcmutils as KCM
+import org.kde.kirigami as Kirigami
 
 ColumnLayout {
     id: root
     property alias cfg_Color: colorButton.color
     property int cfg_FillMode
     property alias cfg_Blur: blurRadioButton.checked
+    property var screen : Screen
+    property var screenSize: !!screen.geometry ? Qt.size(screen.geometry.width, screen.geometry.height):  Qt.size(screen.width, screen.height)
 
     function saveConfig() {
         imageWallpaper.wallpaperModel.commitDeletion();
@@ -47,11 +44,7 @@ ColumnLayout {
     Wallpaper.ImageBackend {
         id: imageWallpaper
         targetSize: {
-            if (typeof plasmoid !== "undefined") {
-                return Qt.size(plasmoid.width, plasmoid.height)
-            }
-            // Lock screen configuration case
-            return Qt.size(Screen.width, Screen.height)
+            return Qt.size(root.screenSize.width * root.screen.devicePixelRatio, root.screenSize.height * root.screen.devicePixelRatio)
         }
     }
 
@@ -93,7 +86,6 @@ ColumnLayout {
                     if (model[i]["fillMode"] === wallpaper.configuration.FillMode) {
                         resizeComboBox.currentIndex = i;
                         var tl = model[i]["label"].length;
-                        //resizeComboBox.textLength = Math.max(resizeComboBox.textLength, tl+5);
                     }
                 }
             }

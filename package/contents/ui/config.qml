@@ -17,20 +17,14 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-import QtQuick 2.5
-import QtQuick.Controls 1.0 as QtControls
-import QtQuick.Controls 2.3 as QtControls2
-import QtQuick.Layouts 1.0
-import QtQuick.Window 2.0 // for Screen
-//We need units from it
-import org.kde.plasma.core 2.0 as Plasmacore
-import org.kde.plasma.wallpapers.image 2.0 as Wallpaper
-import org.kde.kquickcontrols 2.0 as KQuickControls
-import org.kde.kquickcontrolsaddons 2.0
-import org.kde.kconfig 1.0 // for KAuthorized
-import org.kde.draganddrop 2.0 as DragDrop
-import org.kde.kcm 1.1 as KCM
-import org.kde.kirigami 2.5 as Kirigami
+import QtQuick
+import QtQuick.Layouts
+
+import org.kde.plasma.wallpapers.image as Wallpaper
+import org.kde.kquickcontrols as KQuickControls
+import org.kde.kquickcontrolsaddons
+import org.kde.kcmutils as KCM
+import org.kde.kirigami as Kirigami
 
 ImageConfigPage {
     id: root
@@ -40,7 +34,7 @@ ImageConfigPage {
 
     Column {
         id: pluginSpecificColumn
-        spacing: units.largeSpacing / 2
+        spacing: Kirigami.Units.largeSpacing / 2
         Kirigami.FormData.label: i18n("Reddit config:")
         QtControls2.Label {
             text: i18n("Source subreddit : ")
