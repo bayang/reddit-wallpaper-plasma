@@ -19,7 +19,7 @@
 
 import QtQuick
 import QtQuick.Layouts
-
+import QtQuick.Controls as QtControls2
 import org.kde.plasma.wallpapers.image as Wallpaper
 import org.kde.kquickcontrols as KQuickControls
 import org.kde.kquickcontrolsaddons
