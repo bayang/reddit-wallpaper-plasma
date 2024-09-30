@@ -24,6 +24,7 @@ import QtQuick.Window 2.2
 import QtGraphicalEffects 1.0
 import org.kde.plasma.wallpapers.image 2.0 as Wallpaper
 import org.kde.plasma.core 2.0 as PlasmaCore
+import QtMultimedia 5.15
 
 QQC2.StackView {
     id: root
@@ -36,10 +37,12 @@ QQC2.StackView {
     property int errorTimerDelay: 20000
     property string currentUrl: "blackscreen.jpg"
     property string currentMessage: ""
+    property int counter: 0
+    
 
     Timer {
         id : myTimer
-        interval: wallpaperDelay * 60 * 1000
+        interval: (wallpaperDelay * 60 * 1000)
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -73,6 +76,7 @@ QQC2.StackView {
 
     function loadImage() {
         var isFirst = (root.currentItem == undefined)
+
         var pendingImage = root.baseImage.createObject(root, {
             "source": root.currentUrl,
             "fillMode": root.fillMode,
@@ -85,24 +89,26 @@ QQC2.StackView {
 
         function replaceWhenLoaded() {
             if (pendingImage.status == Image.Error) {
-                console.log("img err")
+                setError("Image Error")
             }
-            if (pendingImage.status != Image.Loading) {
+            if (pendingImage.status == Image.Ready) {
+                pendingImage.playing = true
                 root.replace(pendingImage, {},
                     isFirst ? QQC2.StackView.Immediate : QQC2.StackView.Transition) // don't animate first show
                 pendingImage.statusChanged.disconnect(replaceWhenLoaded)
+
+                // if (pendingImage.frameCount > 0){
+                //     pendingImage.playing = (pendingImage.status == Image.Ready)
+                // }
             }
         }
+
         pendingImage.statusChanged.connect(replaceWhenLoaded)
         replaceWhenLoaded()
     }
 
     function imgType(url) {
-        if (url.endsWith('.png') || url.endsWith('.PNG')) {
-            return 'png'
-        } else {
-            return 'jpeg'
-        }
+        return url.split('.').pop()
     }
 
     function imgToB64(url) {
@@ -110,6 +116,7 @@ QQC2.StackView {
         xhr.onreadystatechange = (function f() {
             if (xhr.readyState == 4) { 
                 var response = new Uint8Array(xhr.response);
+
                 var raw = "";
                 for (var i = 0; i < response.byteLength; i++) {
                     raw += String.fromCharCode(response[i]);
@@ -133,17 +140,49 @@ QQC2.StackView {
                     }
                     return output;
                 }
-                var image = 'data:image/' + imgType(url) +';base64,' + base64Encode(raw);
+                var image = 'data:image;base64,' + base64Encode(raw);
+                
                 root.currentUrl = image
-                 loadImage()
+                loadImage()
             }
        });
        xhr.open('GET', url, true);
        xhr.setRequestHeader('User-Agent','reddit-wallpaper-plugin');
-       xhr.setRequestHeader('accept', 'image/avif,image/webp,*/*');
+       xhr.setRequestHeader('accept', 'image/avif,image/webp,image/*,*/*');
        xhr.responseType = 'arraybuffer';
-       XMLHttpRequest.timeout = 15000
+       XMLHttpRequest.timeout = 150000
        xhr.send();
+    }
+
+    function createVideo(url, existing = false) {
+        var isFirst = (root.currentItem == undefined)
+        counter = 0
+
+        var pendingVideo = root.baseVideo.createObject(root, {
+            "source": root.currentUrl,
+            "fillMode": root.fillMode,
+            "color": root.configColor,
+            "blur": root.blur,
+            "opacity": isFirst || existing ? 1 : 0,
+            "imgTitle": root.currentMessage,
+        })
+
+
+        function replaceWhenLoaded() {
+            if (pendingVideo.status == MediaPlayer.Error) {
+                setError("Video Error")
+            }
+
+            if (pendingVideo.status == MediaPlayer.Buffered || pendingVideo.status == MediaPlayer.Loaded) {
+                root.replace(pendingVideo, {},
+                    isFirst || existing ? QQC2.StackView.Immediate : QQC2.StackView.Transition) // don't animate first show
+                pendingVideo.statusChanged.disconnect(replaceWhenLoaded)
+            }
+        }
+
+        pendingVideo.statusChanged.connect(replaceWhenLoaded)
+        replaceWhenLoaded()
+
     }
 
     function getReddit(url, callback) {
@@ -171,23 +210,36 @@ QQC2.StackView {
           }else{
             var N=Math.floor(Math.random()*d.data.children.length)
             if (d["data"]["children"][N]["data"]["preview"]){
-                var url = d["data"]["children"][N]["data"].url
-                if (url.indexOf("imgur.com") != -1 
-                    && url.indexOf("i.imgur.com") == -1) {
-                    url = url.replace('imgur.com', 'i.imgur.com')
-                    url = url.concat('.jpg')
-                }
+                var data = d["data"]["children"][N]["data"]
+                var url = ""
+    
                 root.currentMessage = d["data"]["children"][N]["data"].title
-                imgToB64(url)
+
+                if (data["preview"]["reddit_video_preview"] != undefined) {
+                    url = data["preview"]["reddit_video_preview"]["fallback_url"]
+                } else {
+                    url = data["url"]
+                }
+
+
+                if (imgType(url) == "mp4" || imgType(url) == "gif") {
+                    root.currentUrl = url
+                    createVideo(url)
+                } else {
+                    if (url.indexOf("imgur.com") != -1 && url.indexOf("i.imgur.com") == -1) {
+                        url = url.replace('imgur.com', 'i.imgur.com')
+                        url = url.concat('.jpg')
+                    }
+
+                    imgToB64(url)
+                }
             }else{
-                console.log("no image")
-                setError("no image could be fetched")
+                setError("No Image Could Be Fetched! (It happens sometimes!)")
                 loadImage()
             }
           }
         }else{
-            console.log("connection failed")
-            setError("connection failed")
+            setError("Connection Failed")
             loadImage()
         }
     }
@@ -200,7 +252,7 @@ QQC2.StackView {
     }
 
     property Component baseImage: Component {
-        Image {
+        AnimatedImage {
             id: mainImage
 
             property alias color: backgroundColor.color
@@ -208,7 +260,7 @@ QQC2.StackView {
             property string imgTitle: ""
 
             asynchronous: true
-            cache: false
+            cache: true
             autoTransform: true
             z: -1
 
@@ -249,17 +301,103 @@ QQC2.StackView {
                     }
                 }
             }
-    QQC2.Label {
-        id: imageTitle
-        color: "white"
-        font.pixelSize: 12
-        text : imgTitle
-        // hardcoded positioning sucks
-        // we need a way to know how much space user toolbars take
-        // to avoid positioning the label behind
-        y : (root.height * Screen.devicePixelRatio) - 50
-        x: 30
+
+            QQC2.Label {
+                id: imageTitle
+                color: "black"
+                font.pixelSize: 14
+                text : imgTitle
+                // hardcoded positioning sucks
+                // we need a way to know how much space user toolbars take
+                // to avoid positioning the label behind
+                y : (root.height * Screen.devicePixelRatio) - 50
+                x: 30
+            }
+        }
     }
+
+    property Component baseVideo: Component {
+        Video {
+            id: mainVideo
+
+            property alias color: backgroundColor.color
+            property bool blur: false
+            property string imgTitle: ""
+
+            loops: 1
+            autoPlay: true
+            autoLoad: true
+            z: -1
+
+            function getStatuses() {
+                console.log("Current State: ".concat(mediaPlaybackStates()[playbackState]))
+                console.log("Current Status: ".concat(mediaStatuses()[status - 1]))
+
+                console.log("-----------------------\n\n")
+            }
+
+            function mediaPlaybackStates() {
+                return ["StoppedState", "PlayingState", "PausedState"]
+            }
+
+            function mediaStatuses() {
+                return ["NoMedia", "Loading", "Loaded", "Buffering", "Stalled", "Buffered", "EndOfMedia", "InvalidMedia", "UnknownStatus"]
+            }
+
+            QQC2.StackView.onRemoved: destroy()
+
+            onPlaybackStateChanged: {
+                // getStatuses()
+
+                if (status == MediaPlayer.EndOfMedia && playbackState == MediaPlayer.StoppedState) {
+                    createVideo(source) // Force loop the video/gif
+                }
+            }
+
+            Rectangle {
+                id: backgroundColor
+                anchors.fill: parent
+                visible: mainVideo.status === MediaPlayer.Buffered && !blurLoader.active
+                z: -2
+            }
+
+            Loader {
+                id: blurLoader
+                anchors.fill: parent
+                z: -3
+                active: mainVideo.blur && (mainVideo.fillMode === VideoOutput.PreserveAspectFit || mainVideo.fillMode === VideoOut.Pad)
+                sourceComponent: Item {
+                    Video {
+                        id: blurSource
+                        anchors.fill: parent
+                        fillMode: VideoOutput.PreserveAspectCrop
+                        source: mainVideo.source
+                        loops: 0
+                        visible: false // will be rendered by the blur
+                    }
+
+                    GaussianBlur {
+                        id: blurEffect
+                        anchors.fill: parent
+                        source: blurSource
+                        radius: 32
+                        samples: 65
+                        visible: blurSource.status === MediaPlayer.Buffered
+                    }
+                }
+            }
+
+            QQC2.Label {
+                id: imageTitle
+                color: "black"
+                font.pixelSize: 14
+                text : imgTitle
+                // hardcoded positioning sucks
+                // we need a way to know how much space user toolbars take
+                // to avoid positioning the label behind
+                y : (root.height * Screen.devicePixelRatio) - 50
+                x: 30
+            }
         }
     }
 
